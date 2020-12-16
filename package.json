@@ -1,0 +1,9 @@
+{
+  "name": "lets-jam-parsers",
+  "version": "0.0.1",
+  "description": "Parsers for different song formats to a standardized structure.",
+  "main": "dist/index.js",
+  "types": "dist/types.d.ts",
+  "author": "Matej Kubinec",
+  "license": "MIT"
+}
