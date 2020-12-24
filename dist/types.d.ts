@@ -21,7 +21,7 @@ export interface SongSection extends Section {
     lines: SongLine[];
 }
 export interface GridSection extends Section {
-    grid: string[][];
+    grid: string[][][];
 }
 export interface Metadata {
     artist: string;

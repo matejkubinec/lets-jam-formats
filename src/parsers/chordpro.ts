@@ -1,4 +1,4 @@
-import { isEmpty } from '../utils';
+import { chordReplacer, isEmpty } from '../utils';
 import {
   Chord,
   GridSection,
@@ -8,6 +8,7 @@ import {
   SectionType,
   SongSection,
 } from '../types';
+import { chordRegex, lineEndingRegex } from '../constants';
 
 interface Directive {
   start: string;
@@ -27,20 +28,6 @@ const DIRECTIVES = {
     start: '{start_of_grid',
     end: '{end_of_grid}',
   },
-};
-
-const chordRegex = /\[(.*?)\]/g;
-const lineEndingRegex = /\r?\n/;
-
-const chordReplacer = (chords: Chord[]) => (
-  _: any,
-  chord: string,
-  pos: number
-): string => {
-  const offset = chords.reduce((res, { chord }) => res + chord.length + 2, 0);
-  const offsetPos = pos - offset;
-  chords.push({ pos: offsetPos, offset, chord });
-  return '';
 };
 
 const parseLine = (line: string): SongLine => {
@@ -68,7 +55,7 @@ const parseGrid = (sectionContent: string): GridSection => {
 
   const map = (line: string) => line.split('|').map(mapCell).filter(isEmpty);
 
-  const grid = lines.filter(filter).map(map).filter(isEmpty)[0];
+  const grid = lines.filter(filter).map(map).filter(isEmpty);
 
   return {
     title,
@@ -119,7 +106,7 @@ const parseMetadataTag = (lines: string[], tag: string) => {
 };
 
 const parseMetadata = (content: string): Metadata => {
-  const lines = content.split(lineEndingRegex);
+  const lines = content ? content.split(lineEndingRegex) : [];
   return {
     artist: parseMetadataTag(lines, 'artist'),
     title: parseMetadataTag(lines, 'title'),

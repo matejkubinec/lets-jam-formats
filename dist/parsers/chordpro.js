@@ -3,6 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.parseChordPro = void 0;
 const utils_1 = require("../utils");
 const types_1 = require("../types");
+const constants_1 = require("../constants");
 const DIRECTIVES = {
     verse: {
         start: '{start_of_verse',
@@ -17,31 +18,23 @@ const DIRECTIVES = {
         end: '{end_of_grid}',
     },
 };
-const chordRegex = /\[(.*?)\]/g;
-const lineEndingRegex = /\r?\n/;
-const chordReplacer = (chords) => (_, chord, pos) => {
-    const offset = chords.reduce((res, { chord }) => res + chord.length + 2, 0);
-    const offsetPos = pos - offset;
-    chords.push({ pos: offsetPos, offset, chord });
-    return '';
-};
 const parseLine = (line) => {
     const chords = new Array();
-    const content = line.replace(chordRegex, chordReplacer(chords));
+    const content = line.replace(constants_1.chordRegex, utils_1.chordReplacer(chords));
     return { content, chords };
 };
 const parseTitle = (line, directive) => line.includes(':')
     ? line.slice(directive.start.length + 1, line.length - 1)
     : '';
 const parseGrid = (sectionContent) => {
-    const [start, ...lines] = sectionContent.split(lineEndingRegex);
+    const [start, ...lines] = sectionContent.split(constants_1.lineEndingRegex);
     const title = parseTitle(start, DIRECTIVES.grid);
     const filter = (line) => !line.startsWith(DIRECTIVES.grid.start) &&
         !line.startsWith(DIRECTIVES.grid.end) &&
         utils_1.isEmpty(line);
     const mapCell = (cell) => cell.replace(/\[|\]/g, '').trim().split(' ').filter(utils_1.isEmpty);
     const map = (line) => line.split('|').map(mapCell).filter(utils_1.isEmpty);
-    const grid = lines.filter(filter).map(map).filter(utils_1.isEmpty)[0];
+    const grid = lines.filter(filter).map(map).filter(utils_1.isEmpty);
     return {
         title,
         grid,
@@ -49,7 +42,7 @@ const parseGrid = (sectionContent) => {
     };
 };
 const parseVerse = (sectionContent) => {
-    const [start, ...lines] = sectionContent.split(lineEndingRegex);
+    const [start, ...lines] = sectionContent.split(constants_1.lineEndingRegex);
     const title = parseTitle(start, DIRECTIVES.verse);
     const filter = (line) => !line.startsWith(DIRECTIVES.verse.start) &&
         !line.startsWith(DIRECTIVES.verse.end) &&
@@ -62,7 +55,7 @@ const parseVerse = (sectionContent) => {
     };
 };
 const parseChorus = (sectionContent) => {
-    const [start, ...lines] = sectionContent.split(lineEndingRegex);
+    const [start, ...lines] = sectionContent.split(constants_1.lineEndingRegex);
     const title = parseTitle(start, DIRECTIVES.chorus);
     const filter = (line) => !line.startsWith(DIRECTIVES.chorus.start) &&
         !line.startsWith(DIRECTIVES.chorus.end) &&
@@ -79,7 +72,7 @@ const parseMetadataTag = (lines, tag) => {
     return tagLine ? tagLine.slice(tag.length + 2, tagLine.length - 1) : '';
 };
 const parseMetadata = (content) => {
-    const lines = content.split(lineEndingRegex);
+    const lines = content ? content.split(constants_1.lineEndingRegex) : [];
     return {
         artist: parseMetadataTag(lines, 'artist'),
         title: parseMetadataTag(lines, 'title'),
@@ -103,7 +96,7 @@ const parseSections = (sections) => sections.filter(utils_1.isEmpty).map(section
 const divideIntoSections = (content) => {
     let current = [];
     const sections = [];
-    content.split(lineEndingRegex).forEach(line => {
+    content.split(constants_1.lineEndingRegex).forEach(line => {
         if (line.startsWith(DIRECTIVES.verse.start) ||
             line.startsWith(DIRECTIVES.chorus.start) ||
             line.startsWith(DIRECTIVES.grid.start)) {
