@@ -1,2 +1,2 @@
-export const chordRegex = /\[(.*?)\]/g;
-export const lineEndingRegex = /\r?\n/;
+export const ChordRegex = /\[(.*?)\]/g;
+export const LineEndingRegex = /\r?\n/;

@@ -11,4 +11,5 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 __exportStar(require("./parsers/chordpro"), exports);
+__exportStar(require("./parsers/letsjam"), exports);
 __exportStar(require("./types"), exports);

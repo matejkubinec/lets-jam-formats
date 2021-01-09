@@ -1,2 +1,2 @@
-export declare const chordRegex: RegExp;
-export declare const lineEndingRegex: RegExp;
+export declare const ChordRegex: RegExp;
+export declare const LineEndingRegex: RegExp;
