@@ -1,4 +1,4 @@
-import { isEmpty } from '../utils';
+import { chordReplacer, isEmpty } from '../utils';
 import {
   Chord,
   GridSection,
@@ -7,167 +7,169 @@ import {
   SongLine,
   SectionType,
   SongSection,
+  Section,
 } from '../types';
+import { ChordRegex, LineEndingRegex } from '../constants';
 
-interface Directive {
-  start: string;
-  end: string;
+export class ChordProParser {
+  parse = (content: string): Song => {
+    const [metadataStr, ...strSections] = this.getStringSections(content);
+    const metadata = this.parseMetadata(metadataStr);
+    const sections = strSections.map(this.parseSection);
+    return { metadata, sections };
+  };
+
+  private getStringSections = (content: string): string[][] => {
+    const sections = new Array<string[]>();
+    let current = new Array<string>();
+
+    for (const line of content.split(LineEndingRegex)) {
+      if (this.isStartDirective(line)) {
+        sections.push(current);
+        current = new Array<string>();
+      }
+
+      if (line.trim()) {
+        current.push(line.trim());
+      }
+    }
+    sections.push(current);
+
+    return sections;
+  };
+
+  private parseSection = (sectionStr: string[]): Section => {
+    const section: Section = {
+      title: '',
+      type: SectionType.unknown,
+    };
+
+    for (const line of sectionStr) {
+      if (this.isVerseStartDirective(line)) {
+        return this.parseVerse(sectionStr);
+      }
+
+      if (this.isChorusStartDirective(line)) {
+        return this.parseChorus(sectionStr);
+      }
+
+      if (this.isGridStartDirective(line)) {
+        return this.parseGrid(sectionStr);
+      }
+    }
+
+    return section;
+  };
+
+  private parseVerse = (content: string[]): SongSection => {
+    const title = this.getValueFromDirective(content[0]) || 'Verse';
+    const lines = content.slice(1, content.length - 1).map(this.parseLine);
+    return { title, lines, type: SectionType.verse };
+  };
+
+  private parseChorus = (content: string[]): SongSection => {
+    const title = this.getValueFromDirective(content[0]) || 'Chorus';
+    const lines = content.slice(1, content.length - 1).map(this.parseLine);
+    return { title, lines, type: SectionType.chorus };
+  };
+
+  private parseGrid = (sectionContent: string[]): GridSection => {
+    const [titleDirective, ...lines] = sectionContent;
+    const title = this.getValueFromDirective(titleDirective);
+
+    const filter = (line: string) =>
+      line &&
+      !this.isGridStartDirective(line) &&
+      !this.isGridEndDirective(line);
+
+    const mapCell = (cell: string) =>
+      cell.replace(/\[|\]/g, '').trim().split(' ').filter(isEmpty);
+
+    const map = (line: string) => line.split('|').map(mapCell).filter(isEmpty);
+
+    const grid = lines.filter(filter).map(map).filter(isEmpty);
+
+    return {
+      title,
+      grid,
+      type: SectionType.grid,
+    };
+  };
+
+  private parseMetadata = (metadataStr: string[]): Metadata => {
+    const metadata: Metadata = {
+      artist: '',
+      title: '',
+      capo: '',
+      key: '',
+      tempo: '',
+    };
+
+    for (const line of metadataStr) {
+      if (line.includes('artist')) {
+        metadata.artist = this.getValueFromDirective(line);
+      }
+
+      if (line.includes('title')) {
+        metadata.title = this.getValueFromDirective(line);
+      }
+
+      if (line.includes('capo')) {
+        metadata.title = this.getValueFromDirective(line);
+      }
+
+      if (line.includes('key')) {
+        metadata.title = this.getValueFromDirective(line);
+      }
+
+      if (line.includes('tempo')) {
+        metadata.title = this.getValueFromDirective(line);
+      }
+    }
+
+    return metadata;
+  };
+
+  private getValueFromDirective = (directive: string) => {
+    const parts = directive.slice(1, directive.length - 1).split(':');
+    return parts.length > 1 ? parts[1] : '';
+  };
+
+  private parseLine = (line: string): SongLine => {
+    if (!line) {
+      return { content: '', chords: [] };
+    }
+
+    const chords = new Array<Chord>();
+    const content = line.replace(ChordRegex, chordReplacer(chords));
+    return { content, chords };
+  };
+
+  private isStartDirective = (line: string) =>
+    this.isVerseStartDirective(line) ||
+    this.isChorusStartDirective(line) ||
+    this.isGridStartDirective(line);
+
+  private isVerseStartDirective = (line: string) =>
+    line.includes('start_of_verse') || line.includes('sov');
+
+  private isChorusStartDirective = (line: string) =>
+    line.includes('start_of_chorus') || line.includes('soc');
+
+  private isGridStartDirective = (line: string) =>
+    line.includes('start_of_grid') || line.includes('sog');
+
+  private isEndDirective = (line: string) =>
+    this.isVerseEndDirective(line) ||
+    this.isChorusEndDirective(line) ||
+    this.isGridEndDirective(line);
+
+  private isVerseEndDirective = (line: string) =>
+    line.includes('end_of_verse') || line.includes('eov');
+
+  private isChorusEndDirective = (line: string) =>
+    line.includes('end_of_chorus') || line.includes('eoc');
+
+  private isGridEndDirective = (line: string) =>
+    line.includes('end_of_grid') || line.includes('eog');
 }
-
-const DIRECTIVES = {
-  verse: {
-    start: '{start_of_verse',
-    end: '{end_of_verse}',
-  },
-  chorus: {
-    start: '{start_of_chorus',
-    end: '{end_of_chorus}',
-  },
-  grid: {
-    start: '{start_of_grid',
-    end: '{end_of_grid}',
-  },
-};
-
-const chordRegex = /\[(.*?)\]/g;
-const lineEndingRegex = /\r?\n/;
-
-const chordReplacer = (chords: Chord[]) => (
-  _: any,
-  chord: string,
-  pos: number
-): string => {
-  const offset = chords.reduce((res, { chord }) => res + chord.length + 2, 0);
-  const offsetPos = pos - offset;
-  chords.push({ pos: offsetPos, offset, chord });
-  return '';
-};
-
-const parseLine = (line: string): SongLine => {
-  const chords = new Array<Chord>();
-  const content = line.replace(chordRegex, chordReplacer(chords));
-  return { content, chords };
-};
-
-const parseTitle = (line: string, directive: Directive) =>
-  line.includes(':')
-    ? line.slice(directive.start.length + 1, line.length - 1)
-    : '';
-
-const parseGrid = (sectionContent: string): GridSection => {
-  const [start, ...lines] = sectionContent.split(lineEndingRegex);
-  const title = parseTitle(start, DIRECTIVES.grid);
-
-  const filter = (line: string) =>
-    !line.startsWith(DIRECTIVES.grid.start) &&
-    !line.startsWith(DIRECTIVES.grid.end) &&
-    isEmpty(line);
-
-  const mapCell = (cell: string) =>
-    cell.replace(/\[|\]/g, '').trim().split(' ').filter(isEmpty);
-
-  const map = (line: string) => line.split('|').map(mapCell).filter(isEmpty);
-
-  const grid = lines.filter(filter).map(map).filter(isEmpty)[0];
-
-  return {
-    title,
-    grid,
-    type: SectionType.grid,
-  };
-};
-
-const parseVerse = (sectionContent: string): SongSection => {
-  const [start, ...lines] = sectionContent.split(lineEndingRegex);
-  const title = parseTitle(start, DIRECTIVES.verse);
-
-  const filter = (line: string) =>
-    !line.startsWith(DIRECTIVES.verse.start) &&
-    !line.startsWith(DIRECTIVES.verse.end) &&
-    isEmpty(line);
-
-  const parsedLines = lines.filter(filter).map(parseLine);
-
-  return {
-    title: title,
-    type: SectionType.verse,
-    lines: parsedLines,
-  };
-};
-
-const parseChorus = (sectionContent: string): SongSection => {
-  const [start, ...lines] = sectionContent.split(lineEndingRegex);
-  const title = parseTitle(start, DIRECTIVES.chorus);
-
-  const filter = (line: string) =>
-    !line.startsWith(DIRECTIVES.chorus.start) &&
-    !line.startsWith(DIRECTIVES.chorus.end) &&
-    isEmpty(line);
-
-  const parsedLines = lines.filter(filter).map(parseLine);
-
-  return {
-    title: title,
-    type: SectionType.chorus,
-    lines: parsedLines,
-  };
-};
-
-const parseMetadataTag = (lines: string[], tag: string) => {
-  const tagLine = (lines || []).find(line => line.includes(tag));
-  return tagLine ? tagLine.slice(tag.length + 2, tagLine.length - 1) : '';
-};
-
-const parseMetadata = (content: string): Metadata => {
-  const lines = content.split(lineEndingRegex);
-  return {
-    artist: parseMetadataTag(lines, 'artist'),
-    title: parseMetadataTag(lines, 'title'),
-    key: parseMetadataTag(lines, 'key'),
-    capo: parseMetadataTag(lines, 'capo'),
-    tempo: parseMetadataTag(lines, 'tempo'),
-  };
-};
-
-const parseSections = (sections: string[]) =>
-  sections.filter(isEmpty).map(section => {
-    if (section.startsWith(DIRECTIVES.verse.start)) {
-      return parseVerse(section);
-    }
-
-    if (section.startsWith(DIRECTIVES.chorus.start)) {
-      return parseChorus(section);
-    }
-
-    if (section.startsWith(DIRECTIVES.grid.start)) {
-      return parseGrid(section);
-    }
-
-    return { title: '', type: SectionType.unknown };
-  });
-
-const divideIntoSections = (content: string): string[] => {
-  let current = [];
-  const sections = [];
-  content.split(lineEndingRegex).forEach(line => {
-    if (
-      line.startsWith(DIRECTIVES.verse.start) ||
-      line.startsWith(DIRECTIVES.chorus.start) ||
-      line.startsWith(DIRECTIVES.grid.start)
-    ) {
-      sections.push(current.join('\n').trim());
-      current = [line];
-    } else {
-      current.push(line);
-    }
-  });
-  return sections;
-};
-
-export const parseChordPro = (content: string): Song => {
-  const [metadataSection, ...sections] = divideIntoSections(content);
-  return {
-    metadata: parseMetadata(metadataSection),
-    sections: parseSections(sections),
-  };
-};
