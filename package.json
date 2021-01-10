@@ -7,7 +7,9 @@
   "author": "Matej Kubinec",
   "license": "MIT",
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "build": "tsc --build",
+    "clear": "tsc --build --clean"
   },
   "devDependencies": {
     "@types/jest": "^26.0.20",
