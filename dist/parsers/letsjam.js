@@ -12,17 +12,22 @@ class LetsJamParser {
             return { metadata, sections };
         };
         this.parseMetadata = (lines) => {
-            var _a, _b, _c;
-            const [title, artist, ...rest] = lines;
-            const capo = ((_a = rest.find(l => l.startsWith('Capo'))) === null || _a === void 0 ? void 0 : _a.split(' ')[1]) || '';
-            const key = ((_b = rest.find(l => l.startsWith('Key'))) === null || _b === void 0 ? void 0 : _b.split(' ')[1]) || '';
-            const tempo = ((_c = rest.find(l => l.startsWith('Tempo'))) === null || _c === void 0 ? void 0 : _c.split(' ')[1]) || '';
+            const parsePart = (part) => {
+                var _a;
+                return ((_a = lines
+                    .find(l => l.startsWith(part))) === null || _a === void 0 ? void 0 : _a.split(' ').slice(1).join(' ')) || '';
+            };
+            const artist = parsePart('Artist');
+            const title = parsePart('Title');
+            const capo = parsePart('Capo');
+            const key = parsePart('Key');
+            const tempo = parsePart('Tempo');
             return {
-                title: title || '',
-                artist: artist || '',
-                capo: capo,
-                key: key,
-                tempo: tempo,
+                title,
+                artist,
+                capo,
+                key,
+                tempo,
             };
         };
         this.parseSection = (lines) => {
