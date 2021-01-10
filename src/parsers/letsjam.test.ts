@@ -3,8 +3,8 @@ import { LetsJamParser } from './letsjam';
 
 describe('Lets Jam Parser', () => {
   const content = [
-    'Title',
-    'Artist',
+    'Title Longer Title',
+    'Artist Longer Artist',
     'Capo 1',
     'Key C',
     'Tempo 120',
@@ -30,8 +30,8 @@ describe('Lets Jam Parser', () => {
   it('parses metadata correctly', () => {
     const { metadata } = parser.parse(content);
 
-    expect(metadata.title).toBe('Title');
-    expect(metadata.artist).toBe('Artist');
+    expect(metadata.title).toBe('Longer Title');
+    expect(metadata.artist).toBe('Longer Artist');
     expect(metadata.capo).toBe('1');
     expect(metadata.key).toBe('C');
     expect(metadata.tempo).toBe('120');

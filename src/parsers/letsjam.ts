@@ -17,17 +17,25 @@ export class LetsJamParser {
   };
 
   private parseMetadata = (lines: string[]): Metadata => {
-    const [title, artist, ...rest] = lines;
-    const capo = rest.find(l => l.startsWith('Capo'))?.split(' ')[1] || '';
-    const key = rest.find(l => l.startsWith('Key'))?.split(' ')[1] || '';
-    const tempo = rest.find(l => l.startsWith('Tempo'))?.split(' ')[1] || '';
+    const parsePart = (part: string) =>
+      lines
+        .find(l => l.startsWith(part))
+        ?.split(' ')
+        .slice(1)
+        .join(' ') || '';
+
+    const artist = parsePart('Artist');
+    const title = parsePart('Title');
+    const capo = parsePart('Capo');
+    const key = parsePart('Key');
+    const tempo = parsePart('Tempo');
 
     return {
-      title: title || '',
-      artist: artist || '',
-      capo: capo,
-      key: key,
-      tempo: tempo,
+      title,
+      artist,
+      capo,
+      key,
+      tempo,
     };
   };
 
