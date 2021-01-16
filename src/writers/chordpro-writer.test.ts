@@ -1,4 +1,10 @@
-import { GridSection, SectionType, Song, SongSection } from '../types';
+import {
+  BlockType,
+  GridSection,
+  SectionType,
+  Song,
+  SongSection,
+} from '../types';
 import { ChordProWriter } from './chordpro-writer';
 
 describe('ChordPro Writer', () => {
@@ -116,12 +122,10 @@ describe('ChordPro Writer', () => {
       type: SectionType.verse,
       lines: [
         {
-          chords: [],
-          content: 'This is a verse line 1',
+          blocks: [{ content: 'This is a verse line 1', type: BlockType.text }],
         },
         {
-          chords: [],
-          content: 'This is a verse line 2',
+          blocks: [{ content: 'This is a verse line 2', type: BlockType.text }],
         },
       ],
     };
@@ -155,19 +159,12 @@ describe('ChordPro Writer', () => {
       type: SectionType.verse,
       lines: [
         {
-          chords: [
-            {
-              chord: 'C',
-              offset: 0,
-              pos: 0,
-            },
-            {
-              chord: 'D',
-              offset: 3,
-              pos: 7,
-            },
+          blocks: [
+            { content: 'C', type: BlockType.chord },
+            { content: 'This is', type: BlockType.text },
+            { content: 'D', type: BlockType.chord },
+            { content: ' a verse line 1', type: BlockType.text },
           ],
-          content: 'This is a verse line 1',
         },
       ],
     };
@@ -256,12 +253,14 @@ describe('ChordPro Writer', () => {
       type: SectionType.chorus,
       lines: [
         {
-          chords: [],
-          content: 'This is a chorus line 1',
+          blocks: [
+            { content: 'This is a chorus line 1', type: BlockType.text },
+          ],
         },
         {
-          chords: [],
-          content: 'This is a chorus line 2',
+          blocks: [
+            { content: 'This is a chorus line 2', type: BlockType.text },
+          ],
         },
       ],
     };
@@ -295,19 +294,12 @@ describe('ChordPro Writer', () => {
       type: SectionType.chorus,
       lines: [
         {
-          chords: [
-            {
-              chord: 'C',
-              offset: 0,
-              pos: 0,
-            },
-            {
-              chord: 'D',
-              offset: 3,
-              pos: 7,
-            },
+          blocks: [
+            { content: 'C', type: BlockType.chord },
+            { content: 'This is', type: BlockType.text },
+            { content: 'D', type: BlockType.chord },
+            { content: ' a chorus line 1', type: BlockType.text },
           ],
-          content: 'This is a chorus line 1',
         },
       ],
     };
@@ -392,8 +384,20 @@ describe('ChordPro Writer', () => {
 
   it('parses grid', () => {
     const grid = [
-      [['C', '.', '.', '.'], ['G']],
-      [['D'], ['E', '.', '.', '.']],
+      [
+        [
+          { content: 'C', type: BlockType.chord },
+          { content: ' . . .', type: BlockType.text },
+        ],
+        [{ content: 'G', type: BlockType.chord }],
+      ],
+      [
+        [{ content: 'D', type: BlockType.chord }],
+        [
+          { content: 'E', type: BlockType.chord },
+          { content: ' . . .', type: BlockType.text },
+        ],
+      ],
     ];
     const gridSection: GridSection = {
       title: 'Grid',
@@ -419,8 +423,8 @@ describe('ChordPro Writer', () => {
     const [start, line1, line2, end] = lines;
 
     expect(start).toBe('{start_of_grid: Grid}');
-    expect(line1).toBe('| C . . . | G |');
-    expect(line2).toBe('| D | E . . . |');
+    expect(line1).toBe('| [C] . . . | [G] |');
+    expect(line2).toBe('| [D] | [E] . . . |');
     expect(end).toBe('{end_of_grid}');
   });
 
@@ -433,8 +437,20 @@ describe('ChordPro Writer', () => {
       tempo: '123',
     };
     const grid = [
-      [['C', '.', '.', '.'], ['G']],
-      [['D'], ['E', '.', '.', '.']],
+      [
+        [
+          { content: 'C', type: BlockType.chord },
+          { content: ' . . .', type: BlockType.text },
+        ],
+        [{ content: 'G', type: BlockType.chord }],
+      ],
+      [
+        [{ content: 'D', type: BlockType.chord }],
+        [
+          { content: 'E', type: BlockType.chord },
+          { content: ' . . .', type: BlockType.text },
+        ],
+      ],
     ];
     const gridSection: GridSection = {
       title: 'Grid',
@@ -446,12 +462,10 @@ describe('ChordPro Writer', () => {
       type: SectionType.verse,
       lines: [
         {
-          chords: [],
-          content: 'This is a verse line 1',
+          blocks: [{ content: 'This is a verse line 1', type: BlockType.text }],
         },
         {
-          chords: [],
-          content: 'This is a verse line 2',
+          blocks: [{ content: 'This is a verse line 2', type: BlockType.text }],
         },
       ],
     };
@@ -460,19 +474,12 @@ describe('ChordPro Writer', () => {
       type: SectionType.chorus,
       lines: [
         {
-          chords: [
-            {
-              chord: 'C',
-              offset: 0,
-              pos: 0,
-            },
-            {
-              chord: 'D',
-              offset: 3,
-              pos: 7,
-            },
+          blocks: [
+            { content: 'C', type: BlockType.chord },
+            { content: 'This is', type: BlockType.text },
+            { content: 'D', type: BlockType.chord },
+            { content: ' a chorus line 1', type: BlockType.text },
           ],
-          content: 'This is a chorus line 1',
         },
       ],
     };
@@ -501,8 +508,8 @@ describe('ChordPro Writer', () => {
       '{end_of_chorus}',
       '',
       '{start_of_grid: Grid}',
-      '| C . . . | G |',
-      '| D | E . . . |',
+      '| [C] . . . | [G] |',
+      '| [D] | [E] . . . |',
       '{end_of_grid}',
       '',
     ].join('\n');

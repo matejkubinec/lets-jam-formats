@@ -1,8 +1,6 @@
-import { Chord } from './types';
-
 export const isEmpty = (a: string | any[]) => a && a.length;
 
-export const chordReplacer = (chords: Chord[]) => (
+export const chordReplacer = (chords: any[]) => (
   _: any,
   chord: string,
   pos: number

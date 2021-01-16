@@ -1,6 +1,5 @@
-import { chordReplacer, isEmpty } from '../utils';
+import { isEmpty } from '../utils';
 import {
-  Chord,
   GridSection,
   Metadata,
   Song,
@@ -8,8 +7,10 @@ import {
   SectionType,
   SongSection,
   Section,
+  Block,
+  BlockType,
 } from '../types';
-import { ChordRegex, LineEndingRegex } from '../constants';
+import { LineEndingRegex } from '../constants';
 
 export class ChordProParser {
   parse = (content: string): Song => {
@@ -82,8 +83,7 @@ export class ChordProParser {
       !this.isGridStartDirective(line) &&
       !this.isGridEndDirective(line);
 
-    const mapCell = (cell: string) =>
-      cell.replace(/\[|\]/g, '').trim().split(' ').filter(isEmpty);
+    const mapCell = (cell: string) => this.parseLine(cell.trim()).blocks;
 
     const map = (line: string) => line.split('|').map(mapCell).filter(isEmpty);
 
@@ -136,13 +136,37 @@ export class ChordProParser {
   };
 
   private parseLine = (line: string): SongLine => {
-    if (!line) {
-      return { content: '', chords: [] };
+    const blocks = new Array<Block>();
+    let currentType: BlockType = BlockType.text;
+    let currentContent = '';
+
+    for (let i = 0; i < line.length; i++) {
+      // start of a chord
+      if (line[i] === '[') {
+        if (i !== 0) {
+          blocks.push({ type: currentType, content: currentContent });
+        }
+        currentType = BlockType.chord;
+        currentContent = '';
+        continue;
+      }
+
+      // end of a chord
+      if (line[i] === ']') {
+        blocks.push({ type: currentType, content: currentContent });
+        currentType = BlockType.text;
+        currentContent = '';
+        continue;
+      }
+
+      currentContent += line[i];
     }
 
-    const chords = new Array<Chord>();
-    const content = line.replace(ChordRegex, chordReplacer(chords));
-    return { content, chords };
+    if (currentContent) {
+      blocks.push({ type: currentType, content: currentContent });
+    }
+
+    return { blocks };
   };
 
   private isStartDirective = (line: string) =>

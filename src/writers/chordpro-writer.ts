@@ -1,5 +1,7 @@
 import { Song } from '..';
 import {
+  Block,
+  BlockType,
   GridSection,
   Metadata,
   Section,
@@ -113,12 +115,14 @@ export class ChordProWriter {
   };
 
   private writeLine = (line: SongLine): string => {
-    let content = line.content;
+    let content = '';
 
-    for (const { chord, offset, pos } of line.chords) {
-      const end = pos + offset;
-      const start = pos + offset + chord.length - 1;
-      content = content.slice(0, end) + `[${chord}]` + content.slice(start);
+    for (const block of line.blocks) {
+      if (block.type === BlockType.chord) {
+        content += `[${block.content}]`;
+      } else if (block.type === BlockType.text) {
+        content += block.content;
+      }
     }
 
     return content;
@@ -142,17 +146,23 @@ export class ChordProWriter {
     return lines.join('\n');
   };
 
-  private writeGridRow = (row: string[][]): string => {
+  private writeGridRow = (row: Block[][]): string => {
     let result = '| ';
 
     for (const col of row) {
-      result += this.writeGridCol(col) + ' | ';
+      let text = '';
+
+      for (const block of col) {
+        if (block.type === BlockType.chord) {
+          text += `[${block.content}]`;
+        } else if (block.type === BlockType.text) {
+          text += block.content;
+        }
+      }
+
+      result += text + ' | ';
     }
 
     return row.length ? result.trim() : result + ' |';
-  };
-
-  private writeGridCol = (col: string[]): string => {
-    return col.join(' ');
   };
 }

@@ -1,4 +1,4 @@
-import { GridSection, SectionType, Song, SongSection } from '..';
+import { BlockType, GridSection, SectionType, Song, SongSection } from '..';
 import { LetsJamWriter } from './letsjam-writer';
 
 describe('LetsJam Writer', () => {
@@ -67,10 +67,7 @@ describe('LetsJam Writer', () => {
     };
 
     const actual = writer.write(song);
-    const expected = [
-      'V: Verse',
-      ''
-    ].join('\n');
+    const expected = ['V: Verse', ''].join('\n');
 
     expect(actual).toBe(expected);
   });
@@ -93,10 +90,7 @@ describe('LetsJam Writer', () => {
     };
 
     const actual = writer.write(song);
-    const expected = [
-      'V:',
-      '',
-    ].join('\n');
+    const expected = ['V:', ''].join('\n');
 
     expect(actual).toBe(expected);
   });
@@ -107,12 +101,10 @@ describe('LetsJam Writer', () => {
       type: SectionType.verse,
       lines: [
         {
-          chords: [],
-          content: 'This is a verse line 1',
+          blocks: [{ content: 'This is a verse line 1', type: BlockType.text }],
         },
         {
-          chords: [],
-          content: 'This is a verse line 2',
+          blocks: [{ content: 'This is a verse line 2', type: BlockType.text }],
         },
       ],
     };
@@ -144,19 +136,12 @@ describe('LetsJam Writer', () => {
       type: SectionType.verse,
       lines: [
         {
-          chords: [
-            {
-              chord: 'C',
-              offset: 0,
-              pos: 0,
-            },
-            {
-              chord: 'D',
-              offset: 1,
-              pos: 7,
-            },
+          blocks: [
+            { content: 'C', type: BlockType.chord },
+            { content: 'This is', type: BlockType.text },
+            { content: 'D', type: BlockType.chord },
+            { content: ' a verse line 1', type: BlockType.text },
           ],
-          content: 'This is a verse line 1',
         },
       ],
     };
@@ -174,7 +159,7 @@ describe('LetsJam Writer', () => {
     const actual = writer.write(song);
     const expected = [
       'V: Verse',
-      'C      D',
+      '[C]      [D]',
       'This is a verse line 1',
       '',
     ].join('\n');
@@ -200,10 +185,7 @@ describe('LetsJam Writer', () => {
     };
 
     const actual = writer.write(song);
-    const expected = [
-      'C: Chorus',
-      '',
-    ].join('\n');
+    const expected = ['C: Chorus', ''].join('\n');
 
     expect(actual).toBe(expected);
   });
@@ -224,12 +206,9 @@ describe('LetsJam Writer', () => {
       },
       sections: [chorus],
     };
-    
+
     const actual = writer.write(song);
-    const expected = [
-      'C:',
-      '',
-    ].join('\n');
+    const expected = ['C:', ''].join('\n');
 
     expect(actual).toBe(expected);
   });
@@ -240,12 +219,14 @@ describe('LetsJam Writer', () => {
       type: SectionType.chorus,
       lines: [
         {
-          chords: [],
-          content: 'This is a chorus line 1',
+          blocks: [
+            { content: 'This is a chorus line 1', type: BlockType.text },
+          ],
         },
         {
-          chords: [],
-          content: 'This is a chorus line 2',
+          blocks: [
+            { content: 'This is a chorus line 2', type: BlockType.text },
+          ],
         },
       ],
     };
@@ -277,19 +258,12 @@ describe('LetsJam Writer', () => {
       type: SectionType.chorus,
       lines: [
         {
-          chords: [
-            {
-              chord: 'C',
-              offset: 0,
-              pos: 0,
-            },
-            {
-              chord: 'D',
-              offset: 1,
-              pos: 7,
-            },
+          blocks: [
+            { content: 'C', type: BlockType.chord },
+            { content: 'This is', type: BlockType.text },
+            { content: 'D', type: BlockType.chord },
+            { content: ' a chorus line 1', type: BlockType.text },
           ],
-          content: 'This is a chorus line 1',
         },
       ],
     };
@@ -307,9 +281,9 @@ describe('LetsJam Writer', () => {
     const actual = writer.write(song);
     const expected = [
       'C: Chorus',
-      'C      D',
+      '[C]      [D]',
       'This is a chorus line 1',
-      ''
+      '',
     ].join('\n');
 
     expect(actual).toBe(expected);
@@ -333,10 +307,7 @@ describe('LetsJam Writer', () => {
     };
 
     const actual = writer.write(song);
-    const expected = [
-      'G: Grid',
-      '',
-    ].join('\n');
+    const expected = ['G: Grid', ''].join('\n');
 
     expect(actual).toBe(expected);
   });
@@ -359,18 +330,27 @@ describe('LetsJam Writer', () => {
     };
 
     const actual = writer.write(song);
-    const expected = [
-      'G:',
-      '',
-    ].join('\n');
+    const expected = ['G:', ''].join('\n');
 
     expect(actual).toBe(expected);
   });
 
   it('parses grid', () => {
     const grid = [
-      [['C', '.', '.', '.'], ['G']],
-      [['D'], ['E', '.', '.', '.']],
+      [
+        [
+          { content: 'C', type: BlockType.chord },
+          { content: ' . . .', type: BlockType.text },
+        ],
+        [{ content: 'G', type: BlockType.chord }],
+      ],
+      [
+        [{ content: 'D', type: BlockType.chord }],
+        [
+          { content: 'E', type: BlockType.chord },
+          { content: ' . . .', type: BlockType.text },
+        ],
+      ],
     ];
     const gridSection: GridSection = {
       title: 'Grid',
@@ -391,8 +371,8 @@ describe('LetsJam Writer', () => {
     const actual = writer.write(song);
     const expected = [
       'G: Grid',
-      '| C . . . | G |',
-      '| D | E . . . |',
+      '| [C] . . . | [G] |',
+      '| [D] | [E] . . . |',
       '',
     ].join('\n');
 
@@ -408,8 +388,20 @@ describe('LetsJam Writer', () => {
       tempo: '123',
     };
     const grid = [
-      [['C', '.', '.', '.'], ['G']],
-      [['D'], ['E', '.', '.', '.']],
+      [
+        [
+          { content: 'C', type: BlockType.chord },
+          { content: ' . . .', type: BlockType.text },
+        ],
+        [{ content: 'G', type: BlockType.chord }],
+      ],
+      [
+        [{ content: 'D', type: BlockType.chord }],
+        [
+          { content: 'E', type: BlockType.chord },
+          { content: ' . . .', type: BlockType.text },
+        ],
+      ],
     ];
     const gridSection: GridSection = {
       title: 'Grid',
@@ -421,12 +413,10 @@ describe('LetsJam Writer', () => {
       type: SectionType.verse,
       lines: [
         {
-          chords: [],
-          content: 'This is a verse line 1',
+          blocks: [{ content: 'This is a verse line 1', type: BlockType.text }],
         },
         {
-          chords: [],
-          content: 'This is a verse line 2',
+          blocks: [{ content: 'This is a verse line 2', type: BlockType.text }],
         },
       ],
     };
@@ -435,19 +425,12 @@ describe('LetsJam Writer', () => {
       type: SectionType.chorus,
       lines: [
         {
-          chords: [
-            {
-              chord: 'C',
-              offset: 0,
-              pos: 0,
-            },
-            {
-              chord: 'D',
-              offset: 1,
-              pos: 7,
-            },
+          blocks: [
+            { content: 'C', type: BlockType.chord },
+            { content: 'This is', type: BlockType.text },
+            { content: 'D', type: BlockType.chord },
+            { content: ' a chorus line 1', type: BlockType.text },
           ],
-          content: 'This is a chorus line 1',
         },
       ],
     };
@@ -471,12 +454,12 @@ describe('LetsJam Writer', () => {
       'This is a verse line 2',
       '',
       'C: Chorus',
-      'C      D',
+      '[C]      [D]',
       'This is a chorus line 1',
       '',
       'G: Grid',
-      '| C . . . | G |',
-      '| D | E . . . |',
+      '| [C] . . . | [G] |',
+      '| [D] | [E] . . . |',
       '',
     ].join('\n');
 

@@ -1,5 +1,7 @@
 import { Song } from '..';
 import {
+  Block,
+  BlockType,
   GridSection,
   Metadata,
   Section,
@@ -113,21 +115,28 @@ export class LetsJamWriter {
   };
 
   private writeLine = (line: SongLine): string => {
-    if (line.chords.length === 0) {
-      return line.content + '\n';
-    }
-
     let chordLine = '';
+    let textLine = '';
+    let chordCount = 0;
 
-    for (const { chord, offset, pos } of line.chords) {
-      for (let i = 0; i < pos - offset; i++) {
-        chordLine += ' ';
+    for (const block of line.blocks) {
+      if (block.type === BlockType.chord) {
+        while (chordLine.length < textLine.length + chordCount * 2) {
+          chordLine += ' ';
+        }
+
+        chordCount++;
+        chordLine += `[${block.content}]`;
+      } else if (block.type === BlockType.text) {
+        textLine += block.content;
       }
-
-      chordLine += chord;
     }
 
-    return `${chordLine}\n${line.content}\n`;
+    if (chordLine) {
+      return `${chordLine}\n${textLine}\n`;
+    } else {
+      return `${textLine}\n`;
+    }
   };
 
   private writeGrid = (section: GridSection): string => {
@@ -146,17 +155,23 @@ export class LetsJamWriter {
     return lines.join('\n') + '\n';
   };
 
-  private writeGridRow = (row: string[][]): string => {
+  private writeGridRow = (row: Block[][]): string => {
     let result = '| ';
 
     for (const col of row) {
-      result += this.writeGridCol(col) + ' | ';
+      let text = '';
+
+      for (const block of col) {
+        if (block.type === BlockType.chord) {
+          text += `[${block.content}]`;
+        } else if (block.type === BlockType.text) {
+          text += block.content;
+        }
+      }
+
+      result += text + ' | ';
     }
 
     return row.length ? result.trim() : result + ' |';
-  };
-
-  private writeGridCol = (col: string[]): string => {
-    return col.join(' ');
   };
 }

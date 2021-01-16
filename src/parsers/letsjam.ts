@@ -1,5 +1,6 @@
 import {
-  Chord,
+  Block,
+  BlockType,
   Metadata,
   Song,
   SectionType,
@@ -7,6 +8,11 @@ import {
   GridSection,
 } from '../types';
 import { LineEndingRegex } from '../constants';
+
+type Chord = {
+  pos: number;
+  chord: string;
+};
 
 export class LetsJamParser {
   parse = (content: string): Song => {
@@ -67,13 +73,9 @@ export class LetsJamParser {
         .filter(l => l);
 
       for (const col of cols) {
-        const chords = col
-          .split(' ')
-          .map(l => l.trim())
-          .filter(l => l);
-
-        row.push(chords);
+        row.push(this.parseCell(col));
       }
+
       grid.push(row);
     }
 
@@ -100,25 +102,63 @@ export class LetsJamParser {
       if (i % 2 === 0) {
         chords = this.parseChordLine(content[i]);
       } else {
-        section.lines.push({
-          chords: chords,
-          content: content[i],
-        });
+        if (chords) {
+          section.lines.push({
+            blocks: this.parseTextLine(content[i], chords),
+          });
+        } else {
+          section.lines.push({
+            blocks: [{ content: content[i], type: BlockType.text }],
+          });
+        }
+        chords = [];
       }
     }
 
     return section;
   };
 
+  private parseTextLine = (line: string, chords: Chord[]): Block[] => {
+    let content = line;
+    const blocks = new Array<Block>();
+
+    if (chords.length) {
+      const { pos } = chords[chords.length - 1];
+
+      while (pos > content.length) {
+        content += ' ';
+      }
+    }
+
+    for (let i = chords.length - 1; i >= 0; i--) {
+      const { chord, pos } = chords[i];
+
+      const after = content.slice(pos);
+      const before = content.slice(0, pos);
+
+      if (after) {
+        blocks.push({ content: after, type: BlockType.text });
+      }
+
+      blocks.push({ content: chord, type: BlockType.chord });
+
+      content = before;
+    }
+
+    if (content) {
+      blocks.push({ content, type: BlockType.text });
+    }
+
+    blocks.reverse();
+
+    return blocks;
+  };
+
   private parseChordLine = (line: string): Chord[] => {
-    const chords: Chord[] = [];
-    line.replace(/\w+/g, (chord: string, pos: number) => {
-      const offset = chords.reduce((prev, curr) => prev + curr.chord.length, 0);
-      chords.push({
-        chord: chord,
-        offset: offset,
-        pos: pos - offset,
-      });
+    const chords = new Array<Chord>();
+    line.replace(/\[(.*?)\]/g, (_, chord: string, pos: number) => {
+      const offset = chords.length * 2;
+      chords.push({ chord, pos: pos - offset });
       return '';
     });
     return chords;
@@ -146,6 +186,40 @@ export class LetsJamParser {
     sections.push(currentSection);
 
     return sections;
+  };
+
+  private parseCell = (cell: string): Block[] => {
+    const blocks = new Array<Block>();
+    let currentType: BlockType = BlockType.text;
+    let currentContent = '';
+
+    for (let i = 0; i < cell.length; i++) {
+      // start of a chord
+      if (cell[i] === '[') {
+        if (i !== 0) {
+          blocks.push({ type: currentType, content: currentContent });
+        }
+        currentType = BlockType.chord;
+        currentContent = '';
+        continue;
+      }
+
+      // end of a chord
+      if (cell[i] === ']') {
+        blocks.push({ type: currentType, content: currentContent });
+        currentType = BlockType.text;
+        currentContent = '';
+        continue;
+      }
+
+      currentContent += cell[i];
+    }
+
+    if (currentContent) {
+      blocks.push({ type: currentType, content: currentContent });
+    }
+
+    return blocks;
   };
 
   private isStartDirective = (line: string) =>
