@@ -61,7 +61,7 @@ class ChordProParser {
             const filter = (line) => line &&
                 !this.isGridStartDirective(line) &&
                 !this.isGridEndDirective(line);
-            const mapCell = (cell) => cell.replace(/\[|\]/g, '').trim().split(' ').filter(utils_1.isEmpty);
+            const mapCell = (cell) => this.parseLine(cell.trim()).blocks;
             const map = (line) => line.split('|').map(mapCell).filter(utils_1.isEmpty);
             const grid = lines.filter(filter).map(map).filter(utils_1.isEmpty);
             return {
@@ -102,12 +102,32 @@ class ChordProParser {
             return parts.length > 1 ? parts[1] : '';
         };
         this.parseLine = (line) => {
-            if (!line) {
-                return { content: '', chords: [] };
+            const blocks = new Array();
+            let currentType = types_1.BlockType.text;
+            let currentContent = '';
+            for (let i = 0; i < line.length; i++) {
+                // start of a chord
+                if (line[i] === '[') {
+                    if (i !== 0) {
+                        blocks.push({ type: currentType, content: currentContent });
+                    }
+                    currentType = types_1.BlockType.chord;
+                    currentContent = '';
+                    continue;
+                }
+                // end of a chord
+                if (line[i] === ']') {
+                    blocks.push({ type: currentType, content: currentContent });
+                    currentType = types_1.BlockType.text;
+                    currentContent = '';
+                    continue;
+                }
+                currentContent += line[i];
             }
-            const chords = new Array();
-            const content = line.replace(constants_1.ChordRegex, utils_1.chordReplacer(chords));
-            return { content, chords };
+            if (currentContent) {
+                blocks.push({ type: currentType, content: currentContent });
+            }
+            return { blocks };
         };
         this.isStartDirective = (line) => this.isVerseStartDirective(line) ||
             this.isChorusStartDirective(line) ||

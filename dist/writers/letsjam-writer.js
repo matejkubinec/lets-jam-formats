@@ -81,17 +81,27 @@ class LetsJamWriter {
             return result;
         };
         this.writeLine = (line) => {
-            if (line.chords.length === 0) {
-                return line.content + '\n';
-            }
             let chordLine = '';
-            for (const { chord, offset, pos } of line.chords) {
-                for (let i = 0; i < pos - offset; i++) {
-                    chordLine += ' ';
+            let textLine = '';
+            let chordCount = 0;
+            for (const block of line.blocks) {
+                if (block.type === types_1.BlockType.chord) {
+                    while (chordLine.length < textLine.length + chordCount * 2) {
+                        chordLine += ' ';
+                    }
+                    chordCount++;
+                    chordLine += `[${block.content}]`;
                 }
-                chordLine += chord;
+                else if (block.type === types_1.BlockType.text) {
+                    textLine += block.content;
+                }
             }
-            return `${chordLine}\n${line.content}\n`;
+            if (chordLine) {
+                return `${chordLine}\n${textLine}\n`;
+            }
+            else {
+                return `${textLine}\n`;
+            }
         };
         this.writeGrid = (section) => {
             const lines = [];
@@ -109,12 +119,18 @@ class LetsJamWriter {
         this.writeGridRow = (row) => {
             let result = '| ';
             for (const col of row) {
-                result += this.writeGridCol(col) + ' | ';
+                let text = '';
+                for (const block of col) {
+                    if (block.type === types_1.BlockType.chord) {
+                        text += `[${block.content}]`;
+                    }
+                    else if (block.type === types_1.BlockType.text) {
+                        text += block.content;
+                    }
+                }
+                result += text + ' | ';
             }
             return row.length ? result.trim() : result + ' |';
-        };
-        this.writeGridCol = (col) => {
-            return col.join(' ');
         };
     }
     write(song) {

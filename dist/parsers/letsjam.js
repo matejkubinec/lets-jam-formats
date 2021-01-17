@@ -52,11 +52,7 @@ class LetsJamParser {
                     .map(l => l.trim())
                     .filter(l => l);
                 for (const col of cols) {
-                    const chords = col
-                        .split(' ')
-                        .map(l => l.trim())
-                        .filter(l => l);
-                    row.push(chords);
+                    row.push(this.parseCell(col));
                 }
                 grid.push(row);
             }
@@ -82,23 +78,51 @@ class LetsJamParser {
                     chords = this.parseChordLine(content[i]);
                 }
                 else {
-                    section.lines.push({
-                        chords: chords,
-                        content: content[i],
-                    });
+                    if (chords) {
+                        section.lines.push({
+                            blocks: this.parseTextLine(content[i], chords),
+                        });
+                    }
+                    else {
+                        section.lines.push({
+                            blocks: [{ content: content[i], type: types_1.BlockType.text }],
+                        });
+                    }
+                    chords = [];
                 }
             }
             return section;
         };
+        this.parseTextLine = (line, chords) => {
+            let content = line;
+            const blocks = new Array();
+            if (chords.length) {
+                const { pos } = chords[chords.length - 1];
+                while (pos > content.length) {
+                    content += ' ';
+                }
+            }
+            for (let i = chords.length - 1; i >= 0; i--) {
+                const { chord, pos } = chords[i];
+                const after = content.slice(pos);
+                const before = content.slice(0, pos);
+                if (after) {
+                    blocks.push({ content: after, type: types_1.BlockType.text });
+                }
+                blocks.push({ content: chord, type: types_1.BlockType.chord });
+                content = before;
+            }
+            if (content) {
+                blocks.push({ content, type: types_1.BlockType.text });
+            }
+            blocks.reverse();
+            return blocks;
+        };
         this.parseChordLine = (line) => {
-            const chords = [];
-            line.replace(/\w+/g, (chord, pos) => {
-                const offset = chords.reduce((prev, curr) => prev + curr.chord.length, 0);
-                chords.push({
-                    chord: chord,
-                    offset: offset,
-                    pos: pos - offset,
-                });
+            const chords = new Array();
+            line.replace(/\[(.*?)\]/g, (_, chord, pos) => {
+                const offset = chords.length * 2;
+                chords.push({ chord, pos: pos - offset });
                 return '';
             });
             return chords;
@@ -121,6 +145,34 @@ class LetsJamParser {
             }
             sections.push(currentSection);
             return sections;
+        };
+        this.parseCell = (cell) => {
+            const blocks = new Array();
+            let currentType = types_1.BlockType.text;
+            let currentContent = '';
+            for (let i = 0; i < cell.length; i++) {
+                // start of a chord
+                if (cell[i] === '[') {
+                    if (i !== 0) {
+                        blocks.push({ type: currentType, content: currentContent });
+                    }
+                    currentType = types_1.BlockType.chord;
+                    currentContent = '';
+                    continue;
+                }
+                // end of a chord
+                if (cell[i] === ']') {
+                    blocks.push({ type: currentType, content: currentContent });
+                    currentType = types_1.BlockType.text;
+                    currentContent = '';
+                    continue;
+                }
+                currentContent += cell[i];
+            }
+            if (currentContent) {
+                blocks.push({ type: currentType, content: currentContent });
+            }
+            return blocks;
         };
         this.isStartDirective = (line) => this.isVerseStartDirective(line) ||
             this.isChorusStartDirective(line) ||

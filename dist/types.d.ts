@@ -4,14 +4,16 @@ export declare enum SectionType {
     grid = "grid",
     unknown = "unknown"
 }
-export interface Chord {
-    pos: number;
-    offset: number;
-    chord: string;
+export declare enum BlockType {
+    text = "text",
+    chord = "chord"
+}
+export interface Block {
+    content: string;
+    type: BlockType;
 }
 export interface SongLine {
-    content: string;
-    chords: Chord[];
+    blocks: Block[];
 }
 export interface Section {
     title: string;
@@ -21,7 +23,7 @@ export interface SongSection extends Section {
     lines: SongLine[];
 }
 export interface GridSection extends Section {
-    grid: string[][][];
+    grid: Block[][][];
 }
 export interface Metadata {
     artist: string;

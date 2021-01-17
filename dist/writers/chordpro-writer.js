@@ -80,11 +80,14 @@ class ChordProWriter {
             return lines.join('\n');
         };
         this.writeLine = (line) => {
-            let content = line.content;
-            for (const { chord, offset, pos } of line.chords) {
-                const end = pos + offset;
-                const start = pos + offset + chord.length - 1;
-                content = content.slice(0, end) + `[${chord}]` + content.slice(start);
+            let content = '';
+            for (const block of line.blocks) {
+                if (block.type === types_1.BlockType.chord) {
+                    content += `[${block.content}]`;
+                }
+                else if (block.type === types_1.BlockType.text) {
+                    content += block.content;
+                }
             }
             return content;
         };
@@ -105,12 +108,18 @@ class ChordProWriter {
         this.writeGridRow = (row) => {
             let result = '| ';
             for (const col of row) {
-                result += this.writeGridCol(col) + ' | ';
+                let text = '';
+                for (const block of col) {
+                    if (block.type === types_1.BlockType.chord) {
+                        text += `[${block.content}]`;
+                    }
+                    else if (block.type === types_1.BlockType.text) {
+                        text += block.content;
+                    }
+                }
+                result += text + ' | ';
             }
             return row.length ? result.trim() : result + ' |';
-        };
-        this.writeGridCol = (col) => {
-            return col.join(' ');
         };
     }
     write(song) {

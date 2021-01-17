@@ -9,5 +9,4 @@ export declare class ChordProWriter {
     private writeLine;
     private writeGrid;
     private writeGridRow;
-    private writeGridCol;
 }

@@ -9,5 +9,4 @@ export declare class LetsJamWriter {
     private writeLine;
     private writeGrid;
     private writeGridRow;
-    private writeGridCol;
 }
