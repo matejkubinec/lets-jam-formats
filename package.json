@@ -1,7 +1,7 @@
 {
-  "name": "lets-jam-parsers",
+  "name": "lets-jam-formats",
   "version": "0.0.1",
-  "description": "Parsers for different song formats to a standardized structure.",
+  "description": "Parse from/to a different song formats or standardized structure.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "author": "Matej Kubinec",
