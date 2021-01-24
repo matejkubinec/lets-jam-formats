@@ -1,9 +1,10 @@
 import { Song } from '..';
-export declare class ChordProWriter {
+import { IFormatWriter, Metadata, Section } from '../types';
+export declare class ChordProWriter implements IFormatWriter {
     write(song: Song): string;
+    writeMetadata: (metadata: Metadata) => string;
+    writeSections: (sections: Section[]) => string;
     private writeResult;
-    private writeMetadata;
-    private writeSections;
     private writeVerse;
     private writeChorus;
     private writeLine;

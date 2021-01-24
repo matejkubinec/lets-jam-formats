@@ -36,3 +36,11 @@ export interface Song {
     metadata: Metadata;
     sections: Section[];
 }
+export interface IFormatWriter {
+    write(song: Song): string;
+    writeSections(sections: Section[]): string;
+    writeMetadata(metadata: Metadata): string;
+}
+export interface IFormatParser {
+    parse(content: string): Song;
+}

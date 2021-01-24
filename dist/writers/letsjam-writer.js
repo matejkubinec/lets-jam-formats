@@ -4,19 +4,6 @@ exports.LetsJamWriter = void 0;
 const types_1 = require("../types");
 class LetsJamWriter {
     constructor() {
-        this.writeResult = (metadata, sections) => {
-            let result = '';
-            if (metadata) {
-                result += `${metadata}\n`;
-            }
-            if (sections.length) {
-                result += '\n';
-            }
-            for (const section of sections) {
-                result += `${section}\n`;
-            }
-            return result.trim() + '\n';
-        };
         this.writeMetadata = (metadata) => {
             const lines = [];
             if (metadata.artist) {
@@ -52,7 +39,17 @@ class LetsJamWriter {
                     result.push(this.writeGrid(section));
                 }
             }
-            return result;
+            return result.join('\n');
+        };
+        this.writeResult = (metadata, sections) => {
+            let result = '';
+            if (metadata) {
+                result += `${metadata}\n`;
+            }
+            if (sections.length) {
+                result += `\n${sections}`;
+            }
+            return result.trim() + '\n';
         };
         this.writeVerse = (section) => {
             let result = '';

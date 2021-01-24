@@ -1,5 +1,5 @@
-import { Song } from '../types';
-export declare class ChordProParser {
+import { Song, IFormatParser } from '../types';
+export declare class ChordProParser implements IFormatParser {
     parse: (content: string) => Song;
     private getStringSections;
     private parseSection;

@@ -1,6 +1,6 @@
 {
   "name": "lets-jam-formats",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Parse from/to a different song formats or standardized structure.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

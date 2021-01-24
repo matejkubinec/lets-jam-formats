@@ -1,5 +1,5 @@
-import { Song } from '../types';
-export declare class LetsJamParser {
+import { Song, IFormatParser } from '../types';
+export declare class LetsJamParser implements IFormatParser {
     parse: (content: string) => Song;
     private parseMetadata;
     private parseSection;
