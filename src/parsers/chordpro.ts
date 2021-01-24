@@ -9,10 +9,11 @@ import {
   Section,
   Block,
   BlockType,
+  IFormatParser,
 } from '../types';
 import { LineEndingRegex } from '../constants';
 
-export class ChordProParser {
+export class ChordProParser implements IFormatParser {
   parse = (content: string): Song => {
     const [metadataStr, ...strSections] = this.getStringSections(content);
     const metadata = this.parseMetadata(metadataStr);

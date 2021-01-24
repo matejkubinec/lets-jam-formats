@@ -36,6 +36,32 @@ describe('ChordPro Writer', () => {
     expect(tempo).toBe('{tempo: 123}');
   });
 
+  it('converts metadata correctly (metadata only write)', () => {
+    const song: Song = {
+      metadata: {
+        artist: 'Artist',
+        title: 'Title',
+        capo: '1',
+        key: 'D',
+        tempo: '123',
+      },
+      sections: [],
+    };
+
+    const content = writer.writeMetadata(song.metadata);
+    const lines = content.split('\n');
+
+    expect(lines).toHaveLength(5);
+
+    const [artist, title, capo, key, tempo] = lines;
+
+    expect(artist).toBe('{artist: Artist}');
+    expect(title).toBe('{title: Title}');
+    expect(capo).toBe('{capo: 1}');
+    expect(key).toBe('{key: D}');
+    expect(tempo).toBe('{tempo: 123}');
+  });
+
   it('converts partial metadata', () => {
     const song: Song = {
       metadata: {
@@ -512,6 +538,76 @@ describe('ChordPro Writer', () => {
       '| [D] | [E] . . . |',
       '{end_of_grid}',
       '',
+    ].join('\n');
+
+    expect(content).toBe(expected);
+  });
+
+  it('parses sections (sections only)', () => {
+    const grid = [
+      [
+        [
+          { content: 'C', type: BlockType.chord },
+          { content: ' . . .', type: BlockType.text },
+        ],
+        [{ content: 'G', type: BlockType.chord }],
+      ],
+      [
+        [{ content: 'D', type: BlockType.chord }],
+        [
+          { content: 'E', type: BlockType.chord },
+          { content: ' . . .', type: BlockType.text },
+        ],
+      ],
+    ];
+    const gridSection: GridSection = {
+      title: 'Grid',
+      type: SectionType.grid,
+      grid: grid,
+    };
+    const verseSection: SongSection = {
+      title: 'Verse',
+      type: SectionType.verse,
+      lines: [
+        {
+          blocks: [{ content: 'This is a verse line 1', type: BlockType.text }],
+        },
+        {
+          blocks: [{ content: 'This is a verse line 2', type: BlockType.text }],
+        },
+      ],
+    };
+    const chorusSection: SongSection = {
+      title: 'Chorus',
+      type: SectionType.chorus,
+      lines: [
+        {
+          blocks: [
+            { content: 'C', type: BlockType.chord },
+            { content: 'This is', type: BlockType.text },
+            { content: 'D', type: BlockType.chord },
+            { content: ' a chorus line 1', type: BlockType.text },
+          ],
+        },
+      ],
+    };
+    const sections = [verseSection, chorusSection, gridSection];
+    const content = writer.writeSections(sections);
+
+    const expected = [
+      '{start_of_verse: Verse}',
+      'This is a verse line 1',
+      'This is a verse line 2',
+      '{end_of_verse}',
+      '',
+      '{start_of_chorus: Chorus}',
+      '[C]This is[D] a chorus line 1',
+      '{end_of_chorus}',
+      '',
+      '{start_of_grid: Grid}',
+      '| [C] . . . | [G] |',
+      '| [D] | [E] . . . |',
+      '{end_of_grid}',
     ].join('\n');
 
     expect(content).toBe(expected);

@@ -3,6 +3,7 @@ import {
   Block,
   BlockType,
   GridSection,
+  IFormatWriter,
   Metadata,
   Section,
   SectionType,
@@ -10,7 +11,7 @@ import {
   SongSection,
 } from '../types';
 
-export class LetsJamWriter {
+export class LetsJamWriter implements IFormatWriter {
   write(song: Song): string {
     const metadata = this.writeMetadata(song.metadata);
     const sections = this.writeSections(song.sections);
@@ -18,25 +19,7 @@ export class LetsJamWriter {
     return this.writeResult(metadata, sections);
   }
 
-  private writeResult = (metadata: string, sections: string[]): string => {
-    let result = '';
-
-    if (metadata) {
-      result += `${metadata}\n`;
-    }
-
-    if (sections.length) {
-      result += '\n';
-    }
-
-    for (const section of sections) {
-      result += `${section}\n`;
-    }
-
-    return result.trim() + '\n';
-  };
-
-  private writeMetadata = (metadata: Metadata): string => {
+  writeMetadata = (metadata: Metadata): string => {
     const lines: string[] = [];
 
     if (metadata.artist) {
@@ -66,7 +49,7 @@ export class LetsJamWriter {
     return lines.join('\n');
   };
 
-  private writeSections = (sections: Section[]): string[] => {
+  writeSections = (sections: Section[]): string => {
     let result = [];
 
     for (const section of sections) {
@@ -79,7 +62,21 @@ export class LetsJamWriter {
       }
     }
 
-    return result;
+    return result.join('\n');
+  };
+
+  private writeResult = (metadata: string, sections: string): string => {
+    let result = '';
+
+    if (metadata) {
+      result += `${metadata}\n`;
+    }
+
+    if (sections.length) {
+      result += `\n${sections}`;
+    }
+
+    return result.trim() + '\n';
   };
 
   private writeVerse = (section: SongSection): string => {

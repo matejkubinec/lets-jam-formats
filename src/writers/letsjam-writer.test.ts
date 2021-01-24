@@ -30,6 +30,31 @@ describe('LetsJam Writer', () => {
     expect(actual).toBe(expected);
   });
 
+  it('writes metadata correctly (metadata only)', () => {
+    const song: Song = {
+      metadata: {
+        artist: 'Artist',
+        title: 'Title',
+        capo: '1',
+        key: 'D',
+        tempo: '123',
+      },
+      sections: [],
+    };
+
+    const actual = writer.writeMetadata(song.metadata);
+
+    const expected = [
+      'Artist Artist',
+      'Title Title',
+      'Capo 1',
+      'Key D',
+      'Tempo 123',
+    ].join('\n');
+
+    expect(actual).toBe(expected);
+  });
+
   it('converts partial metadata', () => {
     const song: Song = {
       metadata: {
@@ -449,6 +474,75 @@ describe('LetsJam Writer', () => {
       'Key D',
       'Tempo 123',
       '',
+      'V: Verse',
+      'This is a verse line 1',
+      'This is a verse line 2',
+      '',
+      'C: Chorus',
+      '[C]      [D]',
+      'This is a chorus line 1',
+      '',
+      'G: Grid',
+      '| [C] . . . | [G] |',
+      '| [D] | [E] . . . |',
+      '',
+    ].join('\n');
+
+    expect(actual).toBe(expected);
+  });
+
+  it('parses sections (sections only)', () => {
+    const grid = [
+      [
+        [
+          { content: 'C', type: BlockType.chord },
+          { content: ' . . .', type: BlockType.text },
+        ],
+        [{ content: 'G', type: BlockType.chord }],
+      ],
+      [
+        [{ content: 'D', type: BlockType.chord }],
+        [
+          { content: 'E', type: BlockType.chord },
+          { content: ' . . .', type: BlockType.text },
+        ],
+      ],
+    ];
+    const gridSection: GridSection = {
+      title: 'Grid',
+      type: SectionType.grid,
+      grid: grid,
+    };
+    const verseSection: SongSection = {
+      title: 'Verse',
+      type: SectionType.verse,
+      lines: [
+        {
+          blocks: [{ content: 'This is a verse line 1', type: BlockType.text }],
+        },
+        {
+          blocks: [{ content: 'This is a verse line 2', type: BlockType.text }],
+        },
+      ],
+    };
+    const chorusSection: SongSection = {
+      title: 'Chorus',
+      type: SectionType.chorus,
+      lines: [
+        {
+          blocks: [
+            { content: 'C', type: BlockType.chord },
+            { content: 'This is', type: BlockType.text },
+            { content: 'D', type: BlockType.chord },
+            { content: ' a chorus line 1', type: BlockType.text },
+          ],
+        },
+      ],
+    };
+    const sections = [verseSection, chorusSection, gridSection];
+    const actual = writer.writeSections(sections);
+
+    const expected = [
       'V: Verse',
       'This is a verse line 1',
       'This is a verse line 2',

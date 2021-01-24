@@ -6,6 +6,7 @@ import {
   SectionType,
   SongSection,
   GridSection,
+  IFormatParser,
 } from '../types';
 import { LineEndingRegex } from '../constants';
 
@@ -14,7 +15,7 @@ type Chord = {
   chord: string;
 };
 
-export class LetsJamParser {
+export class LetsJamParser implements IFormatParser {
   parse = (content: string): Song => {
     const [metadataSec, ...stringSections] = this.divideIntoSections(content);
     const metadata = this.parseMetadata(metadataSec);
